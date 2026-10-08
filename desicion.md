@@ -32,5 +32,7 @@ This file records the current product and technical choices as of 2026-10-08.
 
 ## Delivery
 
-- The existing Cloudflare Pages project uses Wrangler Direct Upload. Deploys target `main`; no Git remote or Cloudflare Git integration is configured in this checkout.
+- The public source repository is `https://github.com/prasertsakd/minigolf`. The `main` branch tracks `origin/main`.
+- The original Geek Lagoon code and project-created game assets use the MIT License. Third-party dependencies retain their own licenses.
+- The existing Cloudflare Pages project uses Wrangler Direct Upload. Cloudflare Git integration is not configured; the GitHub source repository does not change the deployment flow.
 - Keep credentials and local secrets outside Git. `npm test` and `npm run build` are the baseline checks before deployment.

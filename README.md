@@ -68,6 +68,10 @@ npm run build
 
 The tests cover ball flight and putting, hazards and wind, all holes and clubs, range scale, three-stage timing, missed timing, swing alignment, and touch input.
 
+## License
+
+Original Geek Lagoon code and project-created game assets are licensed under the MIT License; see [LICENSE](LICENSE). Third-party dependencies remain under their respective licenses.
+
 ## Deploy
 
 The existing Cloudflare Pages project is `minigolf`; `wrangler.toml` points its build output to `dist/`.

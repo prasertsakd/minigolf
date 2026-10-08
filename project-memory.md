@@ -34,7 +34,9 @@ Run `npm test` and `npm run build` after implementation changes. The latest chec
 
 ## Deployment notes
 
-`npm run deploy` builds and uploads `dist/` with Wrangler to the Cloudflare Pages project `minigolf` on branch `main`. The current project uses Direct Upload; Git integration is not configured. A production deployment was last verified from the Cloudflare dashboard, with the custom domain and Pages URL both serving the current site. Do not store Cloudflare tokens in the repository. If CLI authentication is unavailable, the dashboard upload flow has been used successfully.
+The public source repository is `https://github.com/prasertsakd/minigolf`; local `main` tracks `origin/main`. The original Geek Lagoon code and project-created game assets are under the MIT License; third-party dependencies keep their own licenses.
+
+`npm run deploy` builds and uploads `dist/` with Wrangler to the Cloudflare Pages project `minigolf` on branch `main`. The current project uses Direct Upload; Cloudflare Git integration is not configured. A production deployment was last verified from the Cloudflare dashboard, with the custom domain and Pages URL both serving the current site. Do not store Cloudflare tokens in the repository. If CLI authentication is unavailable, the dashboard upload flow has been used successfully.
 
 ## Product / implementation constraints
 
