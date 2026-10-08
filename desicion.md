@@ -18,6 +18,7 @@ This file records the current product and technical choices as of 2026-10-08.
 - A shot follows a three-stage Pangya-style input: start power charge, lock power, then press at the returning accuracy line. The game has no separate manual swing button or range slider.
 - Club-specific range is calculated from the same flight and roll prediction used by gameplay. The flag on the power scale represents the actual distance from the current ball position to the hole.
 - Wind varies by hole and influences shot flight; surfaces and hazards influence the final result.
+- Every designed hole has its own deterministic, smooth height profile (overall grade, crossfall, and one rounded mound or dip). Rendered course meshes and gameplay share the same terrain function; rolling shots use terrain gradients for gravity and stay in contact with the heightfield.
 - Two distinct nine-hole courses are included: tropical Geek Lagoon and desert Sunset Canyon. Both also support three-hole quick rounds.
 
 ## Profile and persistence

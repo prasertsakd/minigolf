@@ -1,6 +1,6 @@
 import './style.css';
 import { GolfWorld } from './world.js';
-import { CLUBS, launch, stepBall, predict, surfaceAt, distance, randomWind } from './physics.js';
+import { BALL_RADIUS, CLUBS, launch, stepBall, predict, surfaceAt, terrainHeight, distance, randomWind } from './physics.js';
 import { COURSES } from './courses.js';
 import { createTouchTap } from './touch.js';
 import { ShotControl, shotAccuracy } from './shot.js';
@@ -114,7 +114,7 @@ function impactSound(){
 }
 function startHole(){
   $('.course-widget').title=`${course().name} — ${hole().name}`;
-  if(!world)return;shot.reset();shotOrigin=null;accumulator=0;strokes=0;finished=false;moving=false;ball={x:hole().tee[0],y:.23,z:hole().tee[1],status:'stopped'};lastSafe={...ball};club='driver';power=80;aimOffset=0;bearing=baseBearing();wind=randomWind();
+  if(!world)return;shot.reset();shotOrigin=null;accumulator=0;strokes=0;finished=false;moving=false;ball={x:hole().tee[0],y:terrainHeight(hole().tee[0],hole().tee[1],hole())+BALL_RADIUS,z:hole().tee[1],status:'stopped'};lastSafe={...ball};club='driver';power=80;aimOffset=0;bearing=baseBearing();wind=randomWind();
   world.build(hole(),holeIndex,course().theme);world.setWind(wind);world.setCamera('player');$('#camera').innerHTML=`${icon('camera')}ดูทั้งสนาม`;$('#loading').hidden=true;$('.course-label h1').textContent=course().name;$('#course-brand').textContent=`${course().name.toUpperCase()} · SOLO`;$('#hole-title').textContent=`${String(holeIndex+1).padStart(2,'0')} — ${hole().name}`;$('#hole-number').textContent=String(holeIndex+1).padStart(2,'0');$('#hole-count').textContent=`/ ${String(roundLength).padStart(2,'0')}`;$('#par').textContent=hole().par;
   const speed=Math.hypot(wind.x,wind.z),direction=windInfo(wind);$('#wind').textContent=`${speed.toFixed(1)} m/s`;$('#wind-direction').textContent=`พัดไป ${direction.label}`;$('#wind-needle').style.setProperty('--wind-angle',`${direction.angle}deg`);$('#wind-compass').setAttribute('aria-label',`ลมพัดไปทาง ${direction.label}`);$('#wind-widget').title=`ลม ${speed.toFixed(1)} m/s พัดไปทาง ${direction.label}`;updateUI();updateGuide();
 }
@@ -177,7 +177,7 @@ function shoot(){
   }
 }
 function beginSwing(){
-  shotOrigin={...ball};lastSafe={x:ball.x,y:.23,z:ball.z,status:'stopped'};accumulator=0;
+  shotOrigin={...ball};lastSafe={...ball,status:'stopped'};accumulator=0;
   swingWhoosh();
   updateUI();notify(shot.rating==='Perfect!'?`PERFECT! · จังหวะเต็ม · แรง ${power}%`:`${shot.rating} · แรง ${power}%`,shot.rating==='Perfect!'?2200:1500);
 }
@@ -260,7 +260,7 @@ if(world){
     const event=shot.tick(dt);
     if(shot.phase==='charging'||shot.phase==='accuracy')updateMeter();
     if(event.autoSwing)beginSwing();
-    if(event.impact){const accuracy=shotAccuracy(shot.error);ball=launch(ball,club,power*accuracy.powerScale,bearing+accuracy.bearingOffset);strokes++;moving=true;impactSound();if(shot.rating==='Perfect!'){tone(980,.18,'triangle',.045);setTimeout(()=>tone(1320,.24,'sine',.04),75);}updateUI();}
+    if(event.impact){const accuracy=shotAccuracy(shot.error);ball=launch(ball,club,power*accuracy.powerScale,bearing+accuracy.bearingOffset,hole());strokes++;moving=true;impactSound();if(shot.rating==='Perfect!'){tone(980,.18,'triangle',.045);setTimeout(()=>tone(1320,.24,'sine',.04),75);}updateUI();}
     if(event.complete){updateMeter();$('#estimate').textContent='ลูกกำลังเคลื่อนที่';}
     if(moving){
       if(ball.status==='moving'){

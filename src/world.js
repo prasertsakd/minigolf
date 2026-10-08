@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { surfaceAt } from './physics.js';
+import { BALL_RADIUS, surfaceAt, terrainHeight } from './physics.js';
 import { swingPose, IMPACT_TIME } from './shot.js';
 
 const material = (color,extra={}) => new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true,...extra});
@@ -28,7 +28,7 @@ export class GolfWorld {
     this.sun.shadow.mapSize.set(1024,1024);this.sun.shadow.camera.left=-75;this.sun.shadow.camera.right=75;this.sun.shadow.camera.top=75;this.sun.shadow.camera.bottom=-75;this.sun.shadow.camera.far=200;this.sun.shadow.normalBias=.08;this.scene.add(this.sun);
     this.course=new THREE.Group();this.scene.add(this.course);
     this.ocean=this.mesh(new THREE.PlaneGeometry(900,900),material(0xa5d8d5),[0,-2.8,0],this.scene);this.ocean.rotation.x=-Math.PI/2;
-    this.ball=this.mesh(new THREE.SphereGeometry(.3,20,16),material(0xffffff),[0,.3,0],this.scene);this.ball.castShadow=true;
+    this.ball=this.mesh(new THREE.SphereGeometry(BALL_RADIUS,20,16),material(0xffffff),[0,BALL_RADIUS,0],this.scene);this.ball.castShadow=true;
     this.ballHalo=this.mesh(new THREE.RingGeometry(.7,.84,32),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,side:THREE.DoubleSide}),[0,.07,0],this.scene);this.ballHalo.rotation.x=-Math.PI/2;
     this.guide=new THREE.Group();this.scene.add(this.guide);
     this.character=this.makeCharacter(appearance);this.scene.add(this.character);
@@ -99,6 +99,29 @@ export class GolfWorld {
   changeZoom(delta){this.zoom=THREE.MathUtils.clamp(this.zoom+delta,.7,1.8);this.setFrustum();}
   disposeGroup(group){while(group.children.length){const obj=group.children[0];obj.traverse(o=>{o.geometry?.dispose();if(o.material){for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});group.remove(obj);}}
   ellipse(x,z,rx,rz,color,y=.025,parent=this.course){const m=this.mesh(new THREE.CircleGeometry(1,64),material(color),[x,y,z],parent);m.rotation.x=-Math.PI/2;m.scale.set(rx,rz,1);return m;}
+  terrainGrid(hole,color){
+    const nx=64,nz=102,minX=-32,minZ=-51,positions=[],colors=[],indices=[],baseColor=new THREE.Color(color);
+    for(let iz=0;iz<=nz;iz++)for(let ix=0;ix<=nx;ix++){
+      const x=minX+ix,z=minZ+iz,height=terrainHeight(x,z,hole),shade=THREE.MathUtils.clamp(1+height*.2,.72,1.25);positions.push(x,height,z);colors.push(baseColor.r*shade,baseColor.g*shade,baseColor.b*shade);
+      if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+nx+1,d=c+1;indices.push(a,c,b,b,c,d);}
+    }
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+    const ground=this.mesh(geometry,material(0xffffff,{vertexColors:true,flatShading:false}),[0,0,0]);ground.castShadow=true;return ground;
+  }
+  terrainEllipse(x,z,rx,rz,color,offset,hole){
+    const segments=64,rings=8,positions=[x,terrainHeight(x,z,hole)+offset,z],indices=[];
+    for(let ring=1;ring<=rings;ring++)for(let i=0;i<segments;i++){
+      const angle=i/segments*Math.PI*2,r=ring/rings;
+      const px=x+Math.cos(angle)*rx*r,pz=z+Math.sin(angle)*rz*r;
+      positions.push(px,terrainHeight(px,pz,hole)+offset,pz);
+    }
+    for(let i=0;i<segments;i++){const current=1+i,next=1+(i+1)%segments;indices.push(0,next,current);}
+    for(let ring=0;ring<rings-1;ring++)for(let i=0;i<segments;i++){
+      const a=1+ring*segments+i,b=1+ring*segments+(i+1)%segments,c=a+segments,d=b+segments;indices.push(a,b,c,b,d,c);
+    }
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+    return this.mesh(geometry,material(color,{flatShading:false}),[0,0,0]);
+  }
   build(hole,index,themeId='lagoon'){
     this.disposeGroup(this.course);this.hole=hole;this.theme=themes[themeId]||themes.lagoon;
     const theme=this.theme;
@@ -107,22 +130,26 @@ export class GolfWorld {
     const shape=new THREE.Shape();shape.moveTo(-24,-51);shape.lineTo(24,-51);shape.quadraticCurveTo(32,-51,32,-42);shape.lineTo(32,42);shape.quadraticCurveTo(32,51,24,51);shape.lineTo(-24,51);shape.quadraticCurveTo(-32,51,-32,42);shape.lineTo(-32,-42);shape.quadraticCurveTo(-32,-51,-24,-51);
     const base=new THREE.ExtrudeGeometry(shape,{depth:3,bevelEnabled:true,bevelSize:1.5,bevelThickness:1,bevelSegments:2,steps:1,curveSegments:12});base.rotateX(-Math.PI/2);base.translate(0,-4,0);
     this.mesh(base,[material(theme.ground),material(theme.side)],[0,0,0]);
-    // A curved, striped fairway follows the same centerline as the physics.
-    const pts=[];const n=45;const width=10;
-    for(let i=0;i<=n;i++){const t=i/n,z=hole.tee[1]+(hole.pin[1]-hole.tee[1])*t;const x=hole.tee[0]*(1-t)+hole.pin[0]*t+Math.sin(t*Math.PI)*hole.bend;pts.push([x,z]);}
-    const verts=[],vc=[];
-    for(let i=0;i<n;i++){
-      const a=pts[i],b=pts[i+1];const col=new THREE.Color(Math.floor((a[1]+55)/7)%2?theme.fairwayA:theme.fairwayB);
-      const quad=[[a[0]-width,a[1]],[a[0]+width,a[1]],[b[0]-width,b[1]],[b[0]-width,b[1]],[a[0]+width,a[1]],[b[0]+width,b[1]]];
-      quad.forEach(([x,z])=>{verts.push(x,.015,z);vc.push(col.r,col.g,col.b);});
+    this.terrainGrid(hole,theme.ground);
+    // A finely sampled fairway mesh follows both the hole's curve and its rolling height profile.
+    const rows=200,cols=12,width=10,verts=[],vc=[],indices=[];
+    for(let row=0;row<=rows;row++){
+      const t=row/rows,z=hole.tee[1]+(hole.pin[1]-hole.tee[1])*t;
+      const center=hole.tee[0]*(1-t)+hole.pin[0]*t+Math.sin(t*Math.PI)*hole.bend;
+      const color=new THREE.Color(Math.floor((z+55)/7)%2?theme.fairwayA:theme.fairwayB);
+      for(let col=0;col<=cols;col++){
+        const lateral=-width+2*width*col/cols,x=center+lateral;
+        const height=terrainHeight(x,z,hole),shade=THREE.MathUtils.clamp(1+height*.16,.75,1.22);verts.push(x,height+.018,z);vc.push(color.r*shade,color.g*shade,color.b*shade);
+        if(row<rows&&col<cols){const a=row*(cols+1)+col,b=a+1,c=a+cols+1,d=c+1;indices.push(a,c,b,b,c,d);}
+      }
     }
-    const fairway=new THREE.BufferGeometry();fairway.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));fairway.setAttribute('color',new THREE.Float32BufferAttribute(vc,3));fairway.computeVertexNormals();
-    this.mesh(fairway,material(0xffffff,{vertexColors:true,side:THREE.DoubleSide}),[0,0,0]);
-    this.ellipse(hole.pin[0],hole.pin[1],9.5,9.5,theme.greenOuter,.027);this.ellipse(hole.pin[0],hole.pin[1],8.6,8.6,theme.green,.038);
-    for(const [x,z,rx,rz] of hole.sand){this.ellipse(x,z,rx+.45,rz+.45,theme.sandRim,.045);this.ellipse(x,z,rx,rz,theme.sand,.052);}
-    for(const [x,z,rx,rz] of hole.water){this.ellipse(x,z,rx+.45,rz+.45,theme.waterRim,.058);this.ellipse(x,z,rx,rz,theme.water,.064);this.ellipse(x-1,z-.8,rx*.8,rz*.75,theme.waterLight,.069);}
-    this.ellipse(hole.pin[0],hole.pin[1],.67,.67,0x254a3d,.073);
-    this.flag=new THREE.Group();this.flag.position.set(hole.pin[0],0,hole.pin[1]);this.course.add(this.flag);
+    const fairway=new THREE.BufferGeometry();fairway.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));fairway.setAttribute('color',new THREE.Float32BufferAttribute(vc,3));fairway.setIndex(indices);fairway.computeVertexNormals();
+    const fairwayMesh=this.mesh(fairway,material(0xffffff,{vertexColors:true,flatShading:false}),[0,0,0]);fairwayMesh.castShadow=true;
+    this.terrainEllipse(hole.pin[0],hole.pin[1],9.5,9.5,theme.greenOuter,.027,hole);this.terrainEllipse(hole.pin[0],hole.pin[1],8.6,8.6,theme.green,.038,hole);
+    for(const [x,z,rx,rz] of hole.sand){this.terrainEllipse(x,z,rx+.45,rz+.45,theme.sandRim,.045,hole);this.terrainEllipse(x,z,rx,rz,theme.sand,.052,hole);}
+    for(const [x,z,rx,rz] of hole.water){this.terrainEllipse(x,z,rx+.45,rz+.45,theme.waterRim,.058,hole);this.terrainEllipse(x,z,rx,rz,theme.water,.064,hole);this.terrainEllipse(x-1,z-.8,rx*.8,rz*.75,theme.waterLight,.069,hole);}
+    this.terrainEllipse(hole.pin[0],hole.pin[1],.67,.67,0x254a3d,.073,hole);
+    this.flag=new THREE.Group();this.flag.position.set(hole.pin[0],terrainHeight(hole.pin[0],hole.pin[1],hole),hole.pin[1]);this.course.add(this.flag);
     this.mesh(new THREE.CylinderGeometry(.07,.07,5.5,8),material(0xfffcde),[0,2.8,0],this.flag);
     this.flagPivot=new THREE.Group();this.flagPivot.position.y=5.55;this.flag.add(this.flagPivot);
     const flagGeometry=new THREE.BufferGeometry(),flagVertices=[],flagIndices=[],flagRows=[],subdivisions=8;
@@ -139,12 +166,12 @@ export class GolfWorld {
     }
     flagGeometry.setAttribute('position',new THREE.Float32BufferAttribute(flagVertices,3));flagGeometry.setIndex(flagIndices);flagGeometry.computeVertexNormals();
     this.flagCloth=this.mesh(flagGeometry,material(0xe17e74,{side:THREE.DoubleSide}),[0,0,0],this.flagPivot);this.flagClothBase=Float32Array.from(flagVertices);
-    const tee=this.mesh(new THREE.BoxGeometry(5,.08,3),material(0xcee2a4),[hole.tee[0],.04,hole.tee[1]]);
-    for(const offset of [-2.5,2.5])this.mesh(new THREE.SphereGeometry(.35,10,8),material(0xf2eee0),[hole.tee[0]+offset,.32,hole.tee[1]]);
+    this.mesh(new THREE.BoxGeometry(5,.08,3),material(0xcee2a4),[hole.tee[0],terrainHeight(hole.tee[0],hole.tee[1],hole)+.04,hole.tee[1]]);
+    for(const offset of [-2.5,2.5]){const x=hole.tee[0]+offset,z=hole.tee[1];this.mesh(new THREE.SphereGeometry(.35,10,8),material(0xf2eee0),[x,terrainHeight(x,z,hole)+.32,z]);}
     let seed=index*137+28;const rand=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
     if(themeId==='lagoon'){
       for(let i=0;i<26;i++){const x=(i%2?1:-1)*(23+rand()*5);const z=-43+rand()*84;if(Math.hypot(x-hole.pin[0],z-hole.pin[1])<12||surfaceAt(x,z,hole)==='water')continue;this.palm(x,z,.75+rand()*.55,rand()*6);}
-      for(let i=0;i<33;i++){const x=(i%2?1:-1)*(21+rand()*10),z=rand()*90-45;if(surfaceAt(x,z,hole)!=='rough')continue;this.mesh(new THREE.DodecahedronGeometry(.5+rand()*.65),material(i%3?0x86ac73:0xe8d5b3),[x,.3,z]);}
+      for(let i=0;i<33;i++){const x=(i%2?1:-1)*(21+rand()*10),z=rand()*90-45;if(surfaceAt(x,z,hole)!=='rough')continue;this.mesh(new THREE.DodecahedronGeometry(.5+rand()*.65),material(i%3?0x86ac73:0xe8d5b3),[x,terrainHeight(x,z,hole)+.3,z]);}
       this.makeHouse(-26,-24);
       this.mesh(new THREE.BoxGeometry(6,.35,9),material(0xb99977),[33,-1.8,-24]);for(let i=0;i<9;i++)this.mesh(new THREE.BoxGeometry(6,.09,.65),material(0xcdb18b),[33,-1.57,-28+i]);
       for(const x of [30.4,35.6])for(const z of [-27,-21])this.mesh(new THREE.CylinderGeometry(.18,.2,2.4,6),material(0x927a59),[x,-1.7,z]);
@@ -159,12 +186,12 @@ export class GolfWorld {
         if(Math.hypot(x-hole.tee[0],z-hole.tee[1])<10||Math.hypot(x-hole.pin[0],z-hole.pin[1])<12||surfaceAt(x,z,hole)!=='rough')continue;
         this.cactus(x,z,.72+rand()*.7,rand()*6);
       }
-      for(let i=0;i<24;i++){const x=(i%2?1:-1)*(30+rand()*10),z=rand()*100-50;this.mesh(new THREE.DodecahedronGeometry(.8+rand()*1.8),material(i%2?0x997154:0xd0aa79),[x,-.1+rand()*.5,z]);}
+      for(let i=0;i<24;i++){const x=(i%2?1:-1)*(30+rand()*10),z=rand()*100-50;this.mesh(new THREE.DodecahedronGeometry(.8+rand()*1.8),material(i%2?0x997154:0xd0aa79),[x,terrainHeight(x,z,hole)-.1+rand()*.5,z]);}
     }
     this.setCamera('overview');this.ready=true;
   }
   palm(x,z,scale,rotation){
-    const group=new THREE.Group();group.position.set(x,0,z);group.scale.setScalar(scale);group.rotation.y=rotation;this.course.add(group);
+    const group=new THREE.Group();group.position.set(x,this.hole?terrainHeight(x,z,this.hole):0,z);group.scale.setScalar(scale);group.rotation.y=rotation;this.course.add(group);
     const trunk=this.mesh(new THREE.CylinderGeometry(.3,.5,7,7),material(this.theme?.trunk??colors.trunk),[.45,3.3,0],group);trunk.rotation.z=-.12;trunk.castShadow=true;
     for(let i=0;i<7;i++){
       const angle=i*Math.PI*2/7;const length=4.5+(i%2)*.7;const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,1.25,.3,-1.8,0,-1.3,-length,0,0,0,0,-1.3,-length,-1.25,.3,-1.8],3));geom.computeVertexNormals();
@@ -173,7 +200,7 @@ export class GolfWorld {
     for(let i=0;i<3;i++)this.mesh(new THREE.SphereGeometry(.33,8,6),material(0x99765b),[.65+i*.27,6.35,-.2],group);
   }
   makeHouse(x,z){
-    const group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=.13;this.course.add(group);
+    const group=new THREE.Group();group.position.set(x,this.hole?terrainHeight(x,z,this.hole):0,z);group.rotation.y=.13;this.course.add(group);
     this.mesh(new THREE.BoxGeometry(5,3.6,6),material(0xffedc8),[0,1.8,0],group).castShadow=true;
     const roof=this.mesh(new THREE.ConeGeometry(5,2.5,4),material(0xd08269),[0,4.8,0],group);roof.rotation.y=Math.PI/4;roof.scale.z=1.1;roof.castShadow=true;
     this.mesh(new THREE.BoxGeometry(1.2,2.6,.08),material(0x7da398),[0,1.4,-3.06],group);
@@ -187,7 +214,7 @@ export class GolfWorld {
     this.mesh(new THREE.CylinderGeometry(width*.9,width*.93,.24,5,1),material(0xd09a6d),[0,height*.92,0],group);
   }
   cactus(x,z,scale,rotation){
-    const group=new THREE.Group();group.position.set(x,0,z);group.scale.setScalar(scale);group.rotation.y=rotation;this.course.add(group);
+    const group=new THREE.Group();group.position.set(x,this.hole?terrainHeight(x,z,this.hole):0,z);group.scale.setScalar(scale);group.rotation.y=rotation;this.course.add(group);
     const green=material(0x47734f),rib=material(0x709263);
     this.mesh(new THREE.CylinderGeometry(.34,.42,2.6,7),green,[0,1.3,0],group);
     this.mesh(new THREE.SphereGeometry(.34,7,5),green,[0,2.58,0],group);
@@ -264,9 +291,9 @@ export class GolfWorld {
     }
   }
   updateBall(ball,bearing,moving,motion){
-    this.ball.position.set(ball.x,Math.max(.08,ball.y),ball.z);this.ballHalo.position.set(ball.x,.09,ball.z);this.ballHalo.visible=!moving&&ball.status!=='holed';
+    this.ball.position.set(ball.x,ball.y,ball.z);this.ballHalo.position.set(ball.x,terrainHeight(ball.x,ball.z,this.hole)+.09,ball.z);this.ballHalo.visible=!moving&&ball.status!=='holed';
     const swinging=motion.phase==='swinging',anchor=swinging?motion.origin:ball;
-    if(!moving||swinging){this.character.position.set(anchor.x-Math.cos(bearing)*1.5,0,anchor.z+Math.sin(bearing)*1.5);this.character.rotation.y=bearing-Math.PI/2;}
+    if(!moving||swinging){const x=anchor.x-Math.cos(bearing)*1.5,z=anchor.z+Math.sin(bearing)*1.5;this.character.position.set(x,terrainHeight(x,z,this.hole),z);this.character.rotation.y=bearing-Math.PI/2;}
     this.character.visible=!moving||swinging;
     this.poseCharacter(motion.elapsed,swinging,motion.putting,motion.power);
     this.updateShotEffects(motion);

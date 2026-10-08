@@ -12,6 +12,7 @@ Geek Lagoon is a browser-based, solo 3D mini-golf game. The production URL is `h
 - A swing uses three timing inputs: begin charging, lock power, then lock accuracy when the cursor returns to the white line. Early and late timing can affect direction and distance.
 - Driver, Iron, Wedge, and Putter have different flight / roll ranges. The scale and target-power estimate are computed from the game flight model; the flag marks the actual player-to-hole distance.
 - Wind speed and direction are randomized for a hole and affect ball flight. Sand, water, rough, green, and fairway also affect play.
+- All 18 holes now use a per-hole, deterministic height profile for grade, cross-slope, and a rounded mound or hollow. The same height function drives the visible terrain and the ball's ground contact, so the ball follows the ground and gravity changes its roll uphill and downhill.
 - Profile lets players edit their name, choose a female or male golfer, and choose one of four outfit palettes: Coral Breeze, Lagoon Green, Sky Blue, or Sunset. Profile and personal statistics are stored under the `fairway-profile` browser local-storage key.
 - The scene includes procedural sky, clouds, course props, flag motion, swing animation, club-specific audio, and particle effects on a perfect shot.
 - Facebook share metadata is in `index.html`; `public/og-geek-lagoon.jpg` is the 1200×630 Open Graph card.
@@ -30,7 +31,7 @@ Geek Lagoon is a browser-based, solo 3D mini-golf game. The production URL is `h
 
 ## Development baseline
 
-Run `npm test` and `npm run build` after implementation changes. The latest check on 2026-10-08 passed all 25 tests and built the Vite bundle. Build output is `dist/`; it is generated and should not be committed.
+Run `npm test` and `npm run build` after implementation changes. The current terrain and physics change passes all 26 tests and builds the Vite bundle. Build output is `dist/`; it is generated and should not be committed.
 
 ## Deployment notes
 
