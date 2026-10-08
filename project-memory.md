@@ -37,7 +37,7 @@ Run `npm test` and `npm run build` after implementation changes. The current ter
 
 The public source repository is `https://github.com/prasertsakd/minigolf`; local `main` tracks `origin/main`. The original Geek Lagoon code and project-created game assets are under the MIT License; third-party dependencies keep their own licenses.
 
-`npm run deploy` builds and uploads `dist/` with Wrangler to the Cloudflare Pages project `minigolf` on branch `main`. The current project uses Direct Upload; Cloudflare Git integration is not configured. A production deployment was last verified from the Cloudflare dashboard, with the custom domain and Pages URL both serving the current site. Do not store Cloudflare tokens in the repository. If CLI authentication is unavailable, the dashboard upload flow has been used successfully.
+`npm run deploy` builds and uploads `dist/` with Wrangler to the Cloudflare Pages project `minigolf` on branch `main`. The current project uses Direct Upload; Cloudflare Git integration is not configured. Commit `1298f87` was deployed to production through the Cloudflare Pages dashboard on 2026-10-08; `https://minigolf.aiyarafun.com/` loaded the updated game successfully. Do not store Cloudflare tokens in the repository. If CLI authentication is unavailable, the dashboard upload flow has been used successfully.
 
 ## Product / implementation constraints
 
@@ -51,4 +51,4 @@ The public source repository is `https://github.com/prasertsakd/minigolf`; local
 
 - Island sides use a perimeter skirt without a flat top cap, so terrain depressions do not hide greens, balls, or golfers. Golfer footing samples the terrain under both feet; shot effects and landing markers follow terrain height.
 - Original procedural scenery adds shoreline rocks and foam, distant islands, flowers, curved palm fronds, animated ocean shading, and fine grass grain. ACES tone mapping and higher-resolution shadows give the scene more depth. Character proportions remain the existing cartoon style.
-- Visual checks covered desktop and mobile HUDs plus near-green footing in both courses. No production deployment is included in this refresh.
+- Visual checks covered desktop and mobile HUDs plus near-green footing in both courses.
