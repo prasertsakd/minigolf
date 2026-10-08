@@ -31,7 +31,7 @@ Geek Lagoon is a browser-based, solo 3D mini-golf game. The production URL is `h
 
 ## Development baseline
 
-Run `npm test` and `npm run build` after implementation changes. The current terrain and physics change passes all 26 tests and builds the Vite bundle. Build output is `dist/`; it is generated and should not be committed.
+Run `npm test` and `npm run build` after implementation changes. The current terrain and physics change passes all 27 tests and builds the Vite bundle. Build output is `dist/`; it is generated and should not be committed.
 
 ## Deployment notes
 
@@ -46,3 +46,9 @@ The public source repository is `https://github.com/prasertsakd/minigolf`; local
 - Keep physics and timing logic testable without the browser where practical. Use injected random sources for deterministic tests of randomized behavior.
 - Keep keyboard and touch controls aligned with the same three-stage shot flow.
 - Treat `artifacts/` as local QA captures and deployment archives; final project assets belong in `public/` or source code.
+
+## Tropical visual refresh
+
+- Island sides use a perimeter skirt without a flat top cap, so terrain depressions do not hide greens, balls, or golfers. Golfer footing samples the terrain under both feet; shot effects and landing markers follow terrain height.
+- Original procedural scenery adds shoreline rocks and foam, distant islands, flowers, curved palm fronds, animated ocean shading, and fine grass grain. ACES tone mapping and higher-resolution shadows give the scene more depth. Character proportions remain the existing cartoon style.
+- Visual checks covered desktop and mobile HUDs plus near-green footing in both courses. No production deployment is included in this refresh.

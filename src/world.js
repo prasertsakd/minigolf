@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { BALL_RADIUS, surfaceAt, terrainHeight } from './physics.js';
 import { swingPose, IMPACT_TIME } from './shot.js';
+import { islandSkirt, oceanMaterial, addIslandScenery, grassMaterial } from './environment.js';
 
 const material = (color,extra={}) => new THREE.MeshStandardMaterial({color,roughness:1,flatShading:true,...extra});
 const colors={grass:0x78ae61,fairway:0x98c67a,green:0xb4d588,sand:0xf4dba4,trunk:0xa98364,leaf:0x4f9271};
 const themes={
-  lagoon:{background:0xc2e3df,fog:0xc2e3df,fogNear:210,fogFar:390,sky:0xffffff,outside:0xa5d8d5,ground:0x78ae61,side:0xd5bd91,fairwayA:0x9dc780,fairwayB:0x94bf75,greenOuter:0x91bb70,green:0xb2d58a,sandRim:0xc49f71,sand:0xf4dba4,waterRim:0x86b9a2,water:0x78c2c8,waterLight:0x8dced0,trunk:0xa98364,leaf:0x4f9271,sun:0xfff7df,ambient:0x88a99d},
+  lagoon:{background:0x9fd6ef,fog:0x9fd6ef,fogNear:150,fogFar:340,sky:0xffffff,outside:0xa5d8d5,ground:0x54882f,side:0xd5bd91,fairwayA:0x8dbc42,fairwayB:0x78a938,greenOuter:0x68a137,green:0x9bc84e,sandRim:0xc49f71,sand:0xf4dba4,waterRim:0x86b9a2,water:0x78c2c8,waterLight:0x8dced0,trunk:0xa98364,leaf:0x4f9271,sun:0xfff7df,ambient:0x88a99d},
   canyon:{background:0xe6bd9a,fog:0xe6bd9a,fogNear:185,fogFar:360,sky:0xffd6b7,outside:0xc6a77f,ground:0xa99863,side:0x825640,fairwayA:0xa9c47a,fairwayB:0x96b16c,greenOuter:0x799957,green:0xb1ca75,sandRim:0x9d6249,sand:0xe0bf86,waterRim:0x648c78,water:0x55a999,waterLight:0x73c7ad,trunk:0x76523c,leaf:0x4d7050,sun:0xffe1ba,ambient:0xa27a5b},
 };
 export class GolfWorld {
@@ -14,7 +15,7 @@ export class GolfWorld {
     this.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
     this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    this.renderer.outputColorSpace=THREE.SRGBColorSpace;
+    this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.12;
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xc2e3df);
     this.scene.fog=new THREE.Fog(0xc2e3df,210,390);
     this.createSky();
@@ -23,11 +24,11 @@ export class GolfWorld {
     this.scene.add(this.overviewCamera,this.playerCamera);
     this.camera=this.overviewCamera;
     this.createClouds();
-    this.hemisphere=new THREE.HemisphereLight(0xfff7df,0x88a99d,2.2);this.scene.add(this.hemisphere);
-    this.sun=new THREE.DirectionalLight(0xfff7df,3);this.sun.position.set(-45,90,-45);this.sun.castShadow=true;
-    this.sun.shadow.mapSize.set(1024,1024);this.sun.shadow.camera.left=-75;this.sun.shadow.camera.right=75;this.sun.shadow.camera.top=75;this.sun.shadow.camera.bottom=-75;this.sun.shadow.camera.far=200;this.sun.shadow.normalBias=.08;this.scene.add(this.sun);
+    this.hemisphere=new THREE.HemisphereLight(0xfff7df,0x7497ad,1.35);this.scene.add(this.hemisphere);
+    this.sun=new THREE.DirectionalLight(0xffe1ad,3.2);this.sun.position.set(-45,90,-45);this.sun.castShadow=true;
+    this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.camera.left=-75;this.sun.shadow.camera.right=75;this.sun.shadow.camera.top=75;this.sun.shadow.camera.bottom=-75;this.sun.shadow.camera.far=200;this.sun.shadow.normalBias=.035;this.scene.add(this.sun);
     this.course=new THREE.Group();this.scene.add(this.course);
-    this.ocean=this.mesh(new THREE.PlaneGeometry(900,900),material(0xa5d8d5),[0,-2.8,0],this.scene);this.ocean.rotation.x=-Math.PI/2;
+    this.ocean=this.mesh(new THREE.PlaneGeometry(900,900),oceanMaterial(),[0,-2.8,0],this.scene);this.ocean.rotation.x=-Math.PI/2;
     this.ball=this.mesh(new THREE.SphereGeometry(BALL_RADIUS,20,16),material(0xffffff),[0,BALL_RADIUS,0],this.scene);this.ball.castShadow=true;
     this.ballHalo=this.mesh(new THREE.RingGeometry(.7,.84,32),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,side:THREE.DoubleSide}),[0,.07,0],this.scene);this.ballHalo.rotation.x=-Math.PI/2;
     this.guide=new THREE.Group();this.scene.add(this.guide);
@@ -49,7 +50,7 @@ export class GolfWorld {
   createSky(){
     const canvas=document.createElement('canvas');canvas.width=1536;canvas.height=768;
     const ctx=canvas.getContext('2d'),gradient=ctx.createLinearGradient(0,0,0,canvas.height);
-    gradient.addColorStop(0,'#61b8e2');gradient.addColorStop(.28,'#8bd2e5');gradient.addColorStop(.58,'#b7e3dc');gradient.addColorStop(.82,'#d8edda');gradient.addColorStop(1,'#edf1d1');
+    gradient.addColorStop(0,'#127ed0');gradient.addColorStop(.28,'#279be5');gradient.addColorStop(.58,'#70cafa');gradient.addColorStop(.82,'#c0e9fa');gradient.addColorStop(1,'#e6f4fc');
     ctx.fillStyle=gradient;ctx.fillRect(0,0,canvas.width,canvas.height);
     const cloud=(x,y,width,height,opacity)=>{
       ctx.save();ctx.globalAlpha=opacity;
@@ -106,7 +107,7 @@ export class GolfWorld {
       if(ix<nx&&iz<nz){const a=iz*(nx+1)+ix,b=a+1,c=a+nx+1,d=c+1;indices.push(a,c,b,b,c,d);}
     }
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();
-    const ground=this.mesh(geometry,material(0xffffff,{vertexColors:true,flatShading:false}),[0,0,0]);ground.castShadow=true;return ground;
+    const ground=this.mesh(geometry,grassMaterial(material(0xffffff,{vertexColors:true,flatShading:false})),[0,0,0]);ground.castShadow=true;return ground;
   }
   terrainEllipse(x,z,rx,rz,color,offset,hole){
     const segments=64,rings=8,positions=[x,terrainHeight(x,z,hole)+offset,z],indices=[];
@@ -126,10 +127,8 @@ export class GolfWorld {
     this.disposeGroup(this.course);this.hole=hole;this.theme=themes[themeId]||themes.lagoon;
     const theme=this.theme;
     this.scene.background.set(theme.background);this.scene.fog.color.set(theme.fog);this.scene.fog.near=theme.fogNear;this.scene.fog.far=theme.fogFar;
-    this.sky.material.color.set(theme.sky);this.ocean.material.color.set(theme.outside);this.hemisphere.color.set(0xfff7df);this.hemisphere.groundColor.set(theme.ambient);this.sun.color.set(theme.sun);
-    const shape=new THREE.Shape();shape.moveTo(-24,-51);shape.lineTo(24,-51);shape.quadraticCurveTo(32,-51,32,-42);shape.lineTo(32,42);shape.quadraticCurveTo(32,51,24,51);shape.lineTo(-24,51);shape.quadraticCurveTo(-32,51,-32,42);shape.lineTo(-32,-42);shape.quadraticCurveTo(-32,-51,-24,-51);
-    const base=new THREE.ExtrudeGeometry(shape,{depth:3,bevelEnabled:true,bevelSize:1.5,bevelThickness:1,bevelSegments:2,steps:1,curveSegments:12});base.rotateX(-Math.PI/2);base.translate(0,-4,0);
-    this.mesh(base,[material(theme.ground),material(theme.side)],[0,0,0]);
+    this.sky.material.color.set(theme.sky);this.ocean.material.color.set(themeId==='lagoon'?0x078fbb:0x429b91);this.hemisphere.color.set(0xfff7df);this.hemisphere.groundColor.set(theme.ambient);this.sun.color.set(theme.sun);
+    this.mesh(islandSkirt(hole),material(theme.side,{side:THREE.DoubleSide}),[0,0,0]);
     this.terrainGrid(hole,theme.ground);
     // A finely sampled fairway mesh follows both the hole's curve and its rolling height profile.
     const rows=200,cols=12,width=10,verts=[],vc=[],indices=[];
@@ -144,7 +143,7 @@ export class GolfWorld {
       }
     }
     const fairway=new THREE.BufferGeometry();fairway.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));fairway.setAttribute('color',new THREE.Float32BufferAttribute(vc,3));fairway.setIndex(indices);fairway.computeVertexNormals();
-    const fairwayMesh=this.mesh(fairway,material(0xffffff,{vertexColors:true,flatShading:false}),[0,0,0]);fairwayMesh.castShadow=true;
+    const fairwayMesh=this.mesh(fairway,grassMaterial(material(0xffffff,{vertexColors:true,flatShading:false})),[0,0,0]);fairwayMesh.castShadow=true;
     this.terrainEllipse(hole.pin[0],hole.pin[1],9.5,9.5,theme.greenOuter,.027,hole);this.terrainEllipse(hole.pin[0],hole.pin[1],8.6,8.6,theme.green,.038,hole);
     for(const [x,z,rx,rz] of hole.sand){this.terrainEllipse(x,z,rx+.45,rz+.45,theme.sandRim,.045,hole);this.terrainEllipse(x,z,rx,rz,theme.sand,.052,hole);}
     for(const [x,z,rx,rz] of hole.water){this.terrainEllipse(x,z,rx+.45,rz+.45,theme.waterRim,.058,hole);this.terrainEllipse(x,z,rx,rz,theme.water,.064,hole);this.terrainEllipse(x-1,z-.8,rx*.8,rz*.75,theme.waterLight,.069,hole);}
@@ -170,6 +169,7 @@ export class GolfWorld {
     for(const offset of [-2.5,2.5]){const x=hole.tee[0]+offset,z=hole.tee[1];this.mesh(new THREE.SphereGeometry(.35,10,8),material(0xf2eee0),[x,terrainHeight(x,z,hole)+.32,z]);}
     let seed=index*137+28;const rand=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
     if(themeId==='lagoon'){
+      addIslandScenery(this,hole,rand);
       for(let i=0;i<26;i++){const x=(i%2?1:-1)*(23+rand()*5);const z=-43+rand()*84;if(Math.hypot(x-hole.pin[0],z-hole.pin[1])<12||surfaceAt(x,z,hole)==='water')continue;this.palm(x,z,.75+rand()*.55,rand()*6);}
       for(let i=0;i<33;i++){const x=(i%2?1:-1)*(21+rand()*10),z=rand()*90-45;if(surfaceAt(x,z,hole)!=='rough')continue;this.mesh(new THREE.DodecahedronGeometry(.5+rand()*.65),material(i%3?0x86ac73:0xe8d5b3),[x,terrainHeight(x,z,hole)+.3,z]);}
       this.makeHouse(-26,-24);
@@ -193,10 +193,17 @@ export class GolfWorld {
   palm(x,z,scale,rotation){
     const group=new THREE.Group();group.position.set(x,this.hole?terrainHeight(x,z,this.hole):0,z);group.scale.setScalar(scale);group.rotation.y=rotation;this.course.add(group);
     const trunk=this.mesh(new THREE.CylinderGeometry(.3,.5,7,7),material(this.theme?.trunk??colors.trunk),[.45,3.3,0],group);trunk.rotation.z=-.12;trunk.castShadow=true;
-    for(let i=0;i<7;i++){
-      const angle=i*Math.PI*2/7;const length=4.5+(i%2)*.7;const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,1.25,.3,-1.8,0,-1.3,-length,0,0,0,0,-1.3,-length,-1.25,.3,-1.8],3));geom.computeVertexNormals();
-      const leaf=this.mesh(geom,material(this.theme?.leaf??colors.leaf,{side:THREE.DoubleSide}),[.9,6.7,0],group);leaf.rotation.y=angle;leaf.castShadow=true;
+    for(let i=0;i<9;i++){
+      const length=4.4+(i%3)*.45,positions=[];
+      for(let segment=0;segment<7;segment++){
+        const t=segment/7,u=(segment+1)/7;
+        const point=(v,side)=>[side*Math.sin(v*Math.PI)*.68,Math.sin(v*Math.PI)*.75-v*v*1.5,-v*length];
+        positions.push(...point(t,-1),...point(u,-1),...point(t,1),...point(t,1),...point(u,-1),...point(u,1));
+      }
+      const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geom.computeVertexNormals();
+      const leaf=this.mesh(geom,material(i%2?0x508d24:0x7fae32,{side:THREE.DoubleSide}),[.9,6.7,0],group);leaf.rotation.y=i*Math.PI*2/9;leaf.castShadow=true;
     }
+    for(let ring=0;ring<8;ring++)this.mesh(new THREE.CylinderGeometry(.33,.36,.09,7),material(0x8c6845),[.45+(ring-4)*.045,1+ring*.67,0],group);
     for(let i=0;i<3;i++)this.mesh(new THREE.SphereGeometry(.33,8,6),material(0x99765b),[.65+i*.27,6.35,-.2],group);
   }
   makeHouse(x,z){
@@ -293,7 +300,7 @@ export class GolfWorld {
   updateBall(ball,bearing,moving,motion){
     this.ball.position.set(ball.x,ball.y,ball.z);this.ballHalo.position.set(ball.x,terrainHeight(ball.x,ball.z,this.hole)+.09,ball.z);this.ballHalo.visible=!moving&&ball.status!=='holed';
     const swinging=motion.phase==='swinging',anchor=swinging?motion.origin:ball;
-    if(!moving||swinging){const x=anchor.x-Math.cos(bearing)*1.5,z=anchor.z+Math.sin(bearing)*1.5;this.character.position.set(x,terrainHeight(x,z,this.hole),z);this.character.rotation.y=bearing-Math.PI/2;}
+    if(!moving||swinging){const x=anchor.x-Math.cos(bearing)*1.5,z=anchor.z+Math.sin(bearing)*1.5;this.character.position.set(x,Math.max(terrainHeight(x-.4,z,this.hole),terrainHeight(x+.4,z,this.hole),terrainHeight(x,z-.4,this.hole),terrainHeight(x,z+.4,this.hole))+.055,z);this.character.rotation.y=bearing-Math.PI/2;}
     this.character.visible=!moving||swinging;
     this.poseCharacter(motion.elapsed,swinging,motion.putting,motion.power);
     this.updateShotEffects(motion);
@@ -353,7 +360,7 @@ export class GolfWorld {
     this.impactFx.visible=active&&age>=0&&age<.38;
     if(this.impactFx.visible){
       const strength=.5+.5*(motion.power||0)/100;
-      this.impactFx.position.set(motion.origin.x,0,motion.origin.z);
+      this.impactFx.position.set(motion.origin.x,terrainHeight(motion.origin.x,motion.origin.z,this.hole),motion.origin.z);
       this.impactRing.scale.setScalar(1+age*10*strength);this.impactRing.material.opacity=(1-age/.38)*.7;
       this.dust.forEach((p,i)=>{const a=i*Math.PI/4;p.position.set(Math.cos(a)*age*3*strength,.15+age*(1.5+(i%3)*.4)-3*age*age,Math.sin(a)*age*3*strength);p.scale.setScalar(1+age*2);p.material.opacity=(1-age/.38)*.8;});
     }
@@ -362,8 +369,8 @@ export class GolfWorld {
     this.perfectCloud.visible=perfect;
     if(perfect){
       const progress=age/.9,fade=1-progress,strength=.7+.3*(motion.power||0)/100;
-      this.perfectFx.position.set(motion.origin.x,0,motion.origin.z);
-      this.perfectCloud.position.set(motion.origin.x,.22,motion.origin.z);
+      this.perfectFx.position.set(motion.origin.x,terrainHeight(motion.origin.x,motion.origin.z,this.hole),motion.origin.z);
+      this.perfectCloud.position.set(motion.origin.x,terrainHeight(motion.origin.x,motion.origin.z,this.hole)+.22,motion.origin.z);
       const positions=this.perfectCloud.geometry.attributes.position;
       this.perfectParticleData.forEach((particle,i)=>{
         const travel=age*particle.speed*strength;
@@ -384,9 +391,9 @@ export class GolfWorld {
       });
     }
   }
-  setGuide(points){this.disposeGroup(this.guide);const visible=points.filter((_,i)=>i%3===0);for(const p of visible){this.mesh(new THREE.SphereGeometry(.16,6,5),new THREE.MeshBasicMaterial({color:0xfffcdf,transparent:true,opacity:.65}),[p.x,p.y+.1,p.z],this.guide);}const last=points.at(-1);if(last){const ring=this.mesh(new THREE.RingGeometry(1.1,1.35,32),new THREE.MeshBasicMaterial({color:0xfffcdf,side:THREE.DoubleSide}),[last.x,.11,last.z],this.guide);ring.rotation.x=-Math.PI/2;}}
+  setGuide(points){this.disposeGroup(this.guide);const visible=points.filter((_,i)=>i%3===0);for(const p of visible){this.mesh(new THREE.SphereGeometry(.16,6,5),new THREE.MeshBasicMaterial({color:0xfffcdf,transparent:true,opacity:.65}),[p.x,p.y+.1,p.z],this.guide);}const last=points.at(-1);if(last){const ring=this.mesh(new THREE.RingGeometry(1.1,1.35,32),new THREE.MeshBasicMaterial({color:0xfffcdf,side:THREE.DoubleSide}),[last.x,terrainHeight(last.x,last.z,this.hole)+.11,last.z],this.guide);ring.rotation.x=-Math.PI/2;}}
   render(dt,ball,bearing,moving,motion={phase:'idle',elapsed:0}){
-    this.clock+=dt;
+    this.clock+=dt;this.ocean.material.userData.time.value=this.clock;
       this.skyTexture.offset.x=(this.clock*.0003)%1;
       this.clouds.forEach(cloud=>{cloud.sprite.position.x+=cloud.speed*dt;if(cloud.sprite.position.x>cloud.range)cloud.sprite.position.x=-cloud.range;if(cloud.sprite.position.x< -cloud.range)cloud.sprite.position.x=cloud.range;cloud.sprite.position.y=cloud.baseY+Math.sin(this.clock*.16+cloud.phase)*.7;});
     if(this.flagPivot&&this.flagCloth){
@@ -402,10 +409,10 @@ export class GolfWorld {
     this.ballHalo.scale.setScalar(1+Math.sin(this.clock*3)*.08);
     this.ripples?.forEach((r,i)=>{r.material.opacity=.18+Math.sin(this.clock*.6+i)*.1;});
     const sx=Math.sin(bearing),sz=Math.cos(bearing),sideOffset=Math.max(0,Math.min(4,(this.aspect-.65)*5));
-    const lookAhead=4/this.zoom;
+    const lookAhead=7/this.zoom;
     // Hold the golfer in view through follow-through before tracking ball flight.
     const focus=motion.phase==='swinging'?motion.origin:ball;
-    const target=this.cameraMode==='overview'?new THREE.Vector3(0,0,0):new THREE.Vector3(focus.x+sx*lookAhead,focus.y+.5,focus.z+sz*lookAhead);
+    const target=this.cameraMode==='overview'?new THREE.Vector3(0,0,0):new THREE.Vector3(focus.x+sx*lookAhead,focus.y+1.1,focus.z+sz*lookAhead);
     const pos=this.cameraMode==='overview'?new THREE.Vector3(110,125,-145):new THREE.Vector3(focus.x-sx*14+sz*sideOffset,focus.y+7,focus.z-sz*14-sx*sideOffset);
     if(this.cameraMode==='player'&&motion.phase==='swinging'&&!motion.putting){
       const age=motion.elapsed-IMPACT_TIME,zoomBeat=Math.sin(Math.min(1,motion.elapsed/1.3)*Math.PI)*.8;

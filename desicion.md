@@ -37,3 +37,8 @@ This file records the current product and technical choices as of 2026-10-08.
 - The original Geek Lagoon code and project-created game assets use the MIT License. Third-party dependencies retain their own licenses.
 - The existing Cloudflare Pages project uses Wrangler Direct Upload. Cloudflare Git integration is not configured; the GitHub source repository does not change the deployment flow.
 - Keep credentials and local secrets outside Git. `npm test` and `npm run build` are the baseline checks before deployment.
+
+## Terrain visibility and scenery
+
+- The island foundation must contain only vertical perimeter faces; never add a flat top over the shared heightfield. A regression test verifies this on all 18 holes.
+- Keep tropical visual upgrades procedural and dependency-free in src/environment.js. Scenery is decorative and placed outside the normal playing area; it does not add collision obstacles.
