@@ -37,7 +37,7 @@ Run `npm test` and `npm run build` after implementation changes. The current ter
 
 The public source repository is `https://github.com/prasertsakd/minigolf`; local `main` tracks `origin/main`. The original Geek Lagoon code and project-created game assets are under the MIT License; third-party dependencies keep their own licenses.
 
-`npm run deploy` builds and uploads `dist/` with Wrangler to the Cloudflare Pages project `minigolf` on branch `main`. The current project uses Direct Upload; Cloudflare Git integration is not configured. Commit `1298f87` was deployed to production through the Cloudflare Pages dashboard on 2026-10-08; `https://minigolf.aiyarafun.com/` loaded the updated game successfully. Do not store Cloudflare tokens in the repository. If CLI authentication is unavailable, the dashboard upload flow has been used successfully.
+`npm run deploy` builds and uploads `dist/` with Wrangler to the Cloudflare Pages project `minigolf` on branch `main`. The current project uses Direct Upload; Cloudflare Git integration is not configured. Commit `6dd9bc7` was deployed to production through the Cloudflare Pages dashboard on 2026-10-08; `https://minigolf.aiyarafun.com/` loaded the updated game successfully. Do not store Cloudflare tokens in the repository. If CLI authentication is unavailable, the dashboard upload flow has been used successfully.
 
 ## Product / implementation constraints
 
