@@ -25,7 +25,7 @@ Geek Lagoon is a browser-based, solo 3D mini-golf game. The production URL is `h
 - `src/shot.js`: shot timing state machine, accuracy result, and golfer swing-pose timeline.
 - `src/range.js`: club-specific distance scale and recommended power.
 - `src/world.js`: Three.js scene, course geometry, characters, camera, flag, sky, clouds, and visual effects.
-- `src/touch.js`: short single-finger tap and pinch recognition.
+- `src/touch.js`: short single-finger tap and pinch recognition, including suppression of duplicate compatibility clicks after touch.
 - `src/style.css`: responsive HUD, modal, and menu styling.
 - `tests/`: Node tests for courses, physics, range, swing rig, shot timing, and touch gestures.
 

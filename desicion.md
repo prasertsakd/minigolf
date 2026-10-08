@@ -42,3 +42,8 @@ This file records the current product and technical choices as of 2026-10-08.
 
 - The island foundation must contain only vertical perimeter faces; never add a flat top over the shared heightfield. A regression test verifies this on all 18 holes.
 - Keep tropical visual upgrades procedural and dependency-free in src/environment.js. Scenery is decorative and placed outside the normal playing area; it does not add collision obstacles.
+
+## Mobile touch click handling
+
+- A tap advances shot timing from pointerup. Ignore compatibility click events for 800 ms after touch release so WebViews that omit touch metadata cannot count one tap twice. Mouse clicks outside this window continue to work.
+

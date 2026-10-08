@@ -234,7 +234,7 @@ $('#world').addEventListener('pointermove',touchTap.move);
 $('#world').addEventListener('pointerup',touchTap.up);
 $('#world').addEventListener('pointercancel',touchTap.cancel);
 $('#world').addEventListener('lostpointercapture',touchTap.cancel);
-$('#world').addEventListener('click',event=>{if(event.pointerType!=='touch'&&!event.sourceCapabilities?.firesTouchEvents)shoot();});
+$('#world').addEventListener('click',event=>{if(touchTap.shouldHandleClick(event))shoot();});
 $('#zoom-in').onclick=()=>world?.changeZoom(.15);$('#zoom-out').onclick=()=>world?.changeZoom(-.15);
 $('#camera').onclick=()=>{if(!world)return;const mode=world.cameraMode==='overview'?'player':'overview';world.setCamera(mode);$('#camera').innerHTML=`${icon('camera')}${mode==='overview'?'มุมมองผู้เล่น':'ดูทั้งสนาม'}`;};
 $('#reset').onclick=()=>{if(busy())return;startHole();notify('เริ่มหลุมนี้ใหม่แล้ว คะแนนหลุมก่อนหน้ายังอยู่');};
