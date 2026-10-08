@@ -1,5 +1,7 @@
 # Geek Lagoon
 
+![Geek Lagoon — browser mini golf on a tropical island](public/og-geek-lagoon.jpg)
+
 Geek Lagoon is a solo 3D mini-golf game that runs in the browser. It is built with Vite and Three.js, uses original procedural course art, and has a Thai / English interface.
 
 Play at [minigolf.aiyarafun.com](https://minigolf.aiyarafun.com/).
@@ -13,6 +15,10 @@ Play at [minigolf.aiyarafun.com](https://minigolf.aiyarafun.com/).
 - Female and male golfer models, player name, and four outfit presets in Profile.
 - A full-screen zoomable Three.js course with compact HUD widgets, animated clouds and flag, swing animation, impact effects, and sound.
 - Facebook Open Graph and large-image card metadata, with the share image at `public/og-geek-lagoon.jpg`.
+
+## Contributing / ร่วมพัฒนา
+
+Want to help make Geek Lagoon better? Friends are welcome to share ideas, report bugs, improve the courses, or build new game features. Open an [Issue](https://github.com/prasertsakd/minigolf/issues) or send a Pull Request. เริ่มต้นได้ที่ [CONTRIBUTING.md](CONTRIBUTING.md) — ยินดีต้อนรับทุกไอเดียครับ
 
 ## Run locally
 
@@ -57,6 +63,7 @@ src/
   style.css    HUD, menus, modals, and responsive layout
 tests/         Node test suite for physics, shots, courses, range, rig, and touch
 public/        Static assets copied to the Vite build
+CONTRIBUTING.md  How to get started and submit a contribution
 ```
 
 ## Checks
