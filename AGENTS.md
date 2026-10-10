@@ -28,7 +28,17 @@ For UI changes, also verify the affected flow in a browser at desktop and mobile
 
 - `src/main.js`: UI, state, controls, audio, storage, and game loop.
 - `src/world.js`: Three.js rendering and golfer / course visuals.
+- `src/golfer.js`: procedural character details, material batching and articulated mesh groups.
+- `src/profile.js`, `src/profile-preview.js`: shared outfit sets and the pre-game 3D golfer preview.
+- `src/room-game.js`, `src/multiplayer.js`, `src/room-ui.js`: authoritative multiplayer simulation, networking and room screens; `worker/` holds the Cloudflare adapter and configuration.
 - `src/physics.js`, `src/shot.js`, `src/range.js`, `src/touch.js`: game simulation and input behavior.
 - `src/courses.js`: course and hole data.
 - `src/style.css`: visual presentation.
 - `tests/`: automated behavior checks.
+
+## Multiplayer
+
+- Preserve one shared full-screen course, peer golfers and independent balls. Do not reintroduce split-screen.
+- Keep ball state, scores, common wind and hole barriers authoritative in `RoomGame`. Clients send shots and aim, never final positions or scores. A new hole starts only after every non-departed golfer has finished.
+- With the local Worker running, run `npm run test:multiplayer` after room protocol / server changes. It uses temporary local room data and four real WebSockets.
+- Deploying the static `dist/` directory does not deploy `worker/`. Validate the Worker bindings, migration and route when multiplayer deployment is requested.

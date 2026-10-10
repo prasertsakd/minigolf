@@ -10,7 +10,7 @@ const CANYON_HOLES = [
   { name:'Dust Devil', par:5, tee:[-12,-42], pin:[11,42], bend:13, sand:[[-17,18,5,6],[13,37,5,4]], water:[[0,2,21,5]], terrain:{grade:.9,crossfall:.017,ridge:-1.2,ridgeAt:.5,ridgeWidth:10,wave:.28,phase:6.5} },
   { name:'Canyon Crossing', par:4, tee:[8,-39], pin:[-8,39], bend:-8, sand:[[17,27,5,5],[-15,14,5,5]], water:[[0,0,27,5]], terrain:{grade:-.4,crossfall:-.016,ridge:1.6,ridgeAt:.57,ridgeWidth:8,wave:.2,phase:7.5} },
   { name:'Last Light', par:4, tee:[-9,-40], pin:[10,40], bend:4, sand:[[-15,28,5,5],[15,15,5,4]], water:[], terrain:{grade:.6,crossfall:.014,ridge:1.2,ridgeAt:.45,ridgeWidth:8,wave:.18,phase:8.5} },
-];
+].map(hole=>({...hole,rockCount:21}));
 
 export const COURSES = {
   lagoon: {

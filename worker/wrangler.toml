@@ -1,0 +1,15 @@
+name = "geek-lagoon-multiplayer"
+main = "index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+routes = [{ pattern = "minigolf.aiyarafun.com/api/*", zone_name = "aiyarafun.com" }]
+
+[durable_objects]
+bindings = [
+  { name = "DIRECTORY", class_name = "RoomDirectory" },
+  { name = "GOLF_ROOM", class_name = "GolfRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RoomDirectory", "GolfRoom"]
